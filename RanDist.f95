@@ -109,7 +109,7 @@ PROGRAM RANDIST
 	print*, '                                                                      '
 	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
 	print*, '                                                                      '
-	print*, 'LinearFit is free software, covered by the GNU General Public License v3,'
+	print*, 'All this is free software, covered by the GNU General Public License v3,'
 	print*, 'and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
 	print*, 'For more information about the license: https://www.gnu.org/licenses/ '
 	print*, '#######################################################################'
