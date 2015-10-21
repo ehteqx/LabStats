@@ -1,6 +1,6 @@
 ! LinearFit - v. 1.1
 ! A simple CLI software for computing the best linear fit (and associated uncertainties) of a data sample using the Least Squares method.
-! (C) Emanuele Ballarin (ehteqx@gmail.com) -- 19/10/2015 # 23.39
+! (C) Emanuele Ballarin (ehteqx@gmail.com) -- 20/10/2015
 !#######################################################################################################################################
 
 program LinearFit

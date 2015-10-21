@@ -2,7 +2,7 @@
 ! {1} A pseudo-ramdomic generator of flat, linear and exponential real-number distributions.
 ! {2} An essential collection of tools for statistical data analysis written in Fortran 95.
 
-! (C) Emanuele Ballarin (ehteqx@gmail.com) -- 20/06/2015
+! (C) Emanuele Ballarin (ehteqx@gmail.com) -- 21/06/2015
 !###############################################################################################
 
 MODULE GLPREC			! Module for global precision constants
@@ -101,11 +101,27 @@ PROGRAM RANDIST
 	
 	tau = 0.5_rk	! MODIFY AS NEEDED
 	
+	! # SOME COSMETICS #
+
+	print*, ' '
+	print*, '#######################################################################'
+	print*, '               RANDIST - v. 1.2 ENH || STATOOLS - v. 2.1              '
+	print*, '                                                                      '
+	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
+	print*, '                                                                      '
+	print*, 'LinearFit is free software, covered by the GNU General Public License v3,'
+	print*, 'and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
+	print*, 'For more information about the license: https://www.gnu.org/licenses/ '
+	print*, '#######################################################################'
+	print*, ' '
+	
 	print*, 'Inserisci il numero di valori da generare... '
 	read*, n
 	
 	print*, 'Inserisci il numero di bin dello istogramma ... '
 	read*, division
+	
+	print*, 'Computation started...'		! Some info for the user
 	
 	allocate(flat(n))
 	allocate(linear(n))
@@ -157,5 +173,7 @@ PROGRAM RANDIST
 	do j = 1_ik, bincount_expon
 		write(unit=4,fmt=*)j, histogram_expon(j)		
 	end do
+	
+	print*, 'Computation completed!'		! Some info for the user
 	
 END PROGRAM RANDIST
