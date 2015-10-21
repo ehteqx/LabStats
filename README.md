@@ -1,6 +1,6 @@
 # LabStats
 
-Some software written in Fortran 95 for scientific (mainly related to physics and laboratory experiences) data analysis, manipulation and simulation. 
+Some software written in Fortran 95 for scientific data analysis, manipulation and simulation (mainly related to physics and physics laboratory experiences).
 The "inspiration" comes from a University class that I am attending.
 
 
