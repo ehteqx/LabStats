@@ -35,7 +35,7 @@ MODULE STATOOLS			! Module for STATOOLS (Tools for statistical data analysis)
 		minvalue = 0.0_rk  				! MINVAL(dataarray) # UNCOMMENT FOR ADAPTIVE BEHAVIOUR (lower limit)
 		maxvalue = MAXVAL(dataarray)	! The adaptive behaviour for the upper limit is default
 		
-		step = ((maxvalue - minvalue)/division) + (MINVAL(dataarray)/division) 	! Action required to avoid unfilled leftovers
+		step = ((maxvalue - minvalue)/division) + (MINVAL(dataarray)/(2*division)) 	! Action required to avoid unfilled leftovers
 		
 		histmin = (minvalue - step)
 		histmax = (maxvalue + step)
