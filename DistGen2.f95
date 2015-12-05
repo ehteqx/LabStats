@@ -4,8 +4,10 @@
 ! It relies heavily on George Marsaglia's KISS linear RNG (Fortran built-in) and G.M.'s Box-Muller Polar Method (reimplemented).
 ! It uses the GLPREC, HISTOG and POLARGAUSS modules/subroutines by Emanuele Ballarin.
 
-! (C) Emanuele Ballarin (ehteqx@gmail.com) -- 21/06/2015
+! (C) Emanuele Ballarin (ehteqx@gmail.com)
 !###############################################################################################################################
+
+! ### MODULES IMPORT & DEFINITION ###
 
 MODULE GLPREC			                 ! Module for global precision constants
 
@@ -145,4 +147,152 @@ MODULE GAUSSIAN         ! Module for the general-purpose generation of Gaussian 
 
     END MODULE GAUSSIAN
 
-!    ###########################################
+! ### MAIN PROGRAM ###
+
+PROGRAM RANDIST
+
+	use GLPREC
+	use GLCONST
+	use HISTOOLS
+	use GAUSSIAN
+	implicit none
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	integer (kind = ik) :: i, j, n, division
+	integer (kind = 4) :: rseed=4395432
+	real (kind = rk) :: tau
+	real (kind = rk) ::	histmin_flat, histmin_linear, histmin_expon
+	real (kind = rk) ::	histmax_flat, histmax_linear, histmax_expon
+	real (kind = rk) ::	histep_flat, histep_linear, histep_expon
+	integer (kind = ik) ::	bincount_flat, bincount_linear, bincount_expon
+	real (kind = rk), allocatable :: flat(:), linear(:), expon(:)
+	integer (kind = ik), allocatable :: histogram_flat(:), histogram_linear(:), histogram_expon(:)
+
+
+	tau = 0.5_rk	! MODIFY AS NEEDED
+
+	! # SOME COSMETICS #
+
+	print*, ' '
+	print*, '#######################################################################'
+	print*, '               RANDIST - v. 1.2 ENH || STATOOLS - v. 2.1              '
+	print*, '                                                                      '
+	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
+	print*, '                                                                      '
+	print*, 'All this is free software, covered by the GNU General Public License v3,'
+	print*, 'and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
+	print*, 'For more information about the license: https://www.gnu.org/licenses/ '
+	print*, '#######################################################################'
+	print*, ' '
+
+	print*, 'Inserisci il numero di valori da generare... '
+	read*, n
+
+	print*, 'Inserisci il numero di bin dello istogramma ... '
+	read*, division
+
+	print*, 'Computation started...'		! Some info for the user
+
+	allocate(flat(n))
+	allocate(linear(n))
+	allocate(expon(n))
+
+	CALL RANDOM_SEED(rseed)
+	CALL RANDOM_NUMBER(flat)
+
+	do i = 1_ik, n
+
+		linear(i) = sqrt(flat(i))
+		expon(i) = (-1.0_rk)*tau*log(1.0_rk-flat(i))
+
+	end do
+
+	! Invoking the statistical functions and copying the data
+
+	CALL binrange(flat, n, division, histmin_flat, histmax_flat, histep_flat, bincount_flat)
+	CALL binrange(linear, n, division, histmin_linear, histmax_linear, histep_linear, bincount_linear)
+	CALL binrange(expon, n, division, histmin_expon, histmax_expon, histep_expon, bincount_expon)
+
+	allocate(histogram_flat(bincount_flat))
+	allocate(histogram_linear(bincount_linear))
+	allocate(histogram_expon(bincount_expon))
+
+	CALL binfill(flat, n, histmin_flat, histmax_flat, histep_flat, bincount_flat, histogram_flat)
+	CALL binfill(linear, n, histmin_linear, histmax_linear, histep_linear, bincount_linear, histogram_linear)
+	CALL binfill(expon, n, histmin_expon, histmax_expon, histep_expon, bincount_expon, histogram_expon)
+
+	! Writing to file all the data...
+
+	open(unit=1, file='distributions.dat')
+	open(unit=2, file='h-flat.dat')
+	open(unit=3, file='h-linear.dat')
+	open(unit=4, file='h-exponential.dat')
+
+	do i=1_ik, n
+		write(unit=1,fmt=*)i, flat(i), expon(i), linear(i)
+	end do
+
+	do j = 1_ik, bincount_flat
+		write(unit=2,fmt=*)j, histogram_flat(j)
+	end do
+
+	do j = 1_ik, bincount_linear
+		write(unit=3,fmt=*)j, histogram_linear(j)
+	end do
+
+	do j = 1_ik, bincount_expon
+		write(unit=4,fmt=*)j, histogram_expon(j)
+	end do
+
+	print*, 'Computation completed!'		! Some info for the user
+
+END PROGRAM RANDIST
+
+! ### END OF THE FILE
