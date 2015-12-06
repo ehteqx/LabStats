@@ -149,150 +149,136 @@ MODULE GAUSSIAN         ! Module for the general-purpose generation of Gaussian 
 
 ! ### MAIN PROGRAM ###
 
-PROGRAM RANDIST
+PROGRAM DISTGEN2
 
-	use GLPREC
+	use GLPREC				! All the required modules are imported
 	use GLCONST
 	use HISTOOLS
 	use GAUSSIAN
-	implicit none
+	implicit none			! As it is standard-prescribed
 
+	! ## VARIABLES DEFINITION ##
 
+	integer (kind = ik) :: dim		! Dimension of the default distribution array
+	real (kind = rk), allocatable :: stdnorm(:), square(:), antilin(:), antisq(:), antisqsh(:)		! Distribution arrays
+	integer (kind = ik), allocatable :: h_stdnorm(:), h_square(:), h_antilin(:), h_antisq(:), h_antisqsh(:)	! Histogram counters
+	real (kind = rk) :: division
 
+	real (kind = rk) :: h_min, h_max, binwth		! Working variables for subroutines
+	integer (kind = ik) :: bincnt
 
+	integer (kind = 4) :: rseed = 6423389		! For the random number generator (change for different results)
 
+	integer (kind = ik) :: i, j 		! Indexes (some can be unnecessary)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	integer (kind = ik) :: i, j, n, division
-	integer (kind = 4) :: rseed=4395432
-	real (kind = rk) :: tau
-	real (kind = rk) ::	histmin_flat, histmin_linear, histmin_expon
-	real (kind = rk) ::	histmax_flat, histmax_linear, histmax_expon
-	real (kind = rk) ::	histep_flat, histep_linear, histep_expon
-	integer (kind = ik) ::	bincount_flat, bincount_linear, bincount_expon
-	real (kind = rk), allocatable :: flat(:), linear(:), expon(:)
-	integer (kind = ik), allocatable :: histogram_flat(:), histogram_linear(:), histogram_expon(:)
-
-
-	tau = 0.5_rk	! MODIFY AS NEEDED
-
-	! # SOME COSMETICS #
+	! ## INTRO SCREEN ##
 
 	print*, ' '
 	print*, '#######################################################################'
-	print*, '               RANDIST - v. 1.2 ENH || STATOOLS - v. 2.1              '
+	print*, '                         DISTGEN2 - v. 1.2 NGD                        '
 	print*, '                                                                      '
 	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
 	print*, '                                                                      '
-	print*, 'All this is free software, covered by the GNU General Public License v3,'
+	print*, 'This is free software, covered by the GNU General Public License v3,  '
 	print*, 'and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
 	print*, 'For more information about the license: https://www.gnu.org/licenses/ '
 	print*, '#######################################################################'
 	print*, ' '
 
-	print*, 'Inserisci il numero di valori da generare... '
-	read*, n
+	! ## ... ##
 
-	print*, 'Inserisci il numero di bin dello istogramma ... '
-	read*, division
+	print*, 'Inserisci il numero di valori da generare... '
+	read*, dim
+
+	print*, 'Inserisci la ampiezza desiderata per i bin dello istogramma ... '
+	read*, division				! User-proposed bin width (may be adapted by the program)
 
 	print*, 'Computation started...'		! Some info for the user
 
-	allocate(flat(n))
-	allocate(linear(n))
-	allocate(expon(n))
+	allocate(stdnorm(dim))
+	allocate(square(dim))
+	allocate(antilin(dim))
+	allocate(antisq(dim))
+	allocate(antisqsh(dim))
 
-	CALL RANDOM_SEED(rseed)
-	CALL RANDOM_NUMBER(flat)
+	! Generating the Standard Gaussian Distribution
 
-	do i = 1_ik, n
+	CALL POLARGAUSS(stdnorm, dim, 0.0_rk, 1.0_rk)
 
-		linear(i) = sqrt(flat(i))
-		expon(i) = (-1.0_rk)*tau*log(1.0_rk-flat(i))
+	! Generating all the other distributions
+
+	do i = 1, dim, 1
+
+		square(i) = ((stdnorm(i))*(stdnorm(i)))
+		antilin(i) = ((1.0_rk)/(stdnorm(i)))
+		antisq(i) = ((1.0_rk)/((stdnorm(i))*(stdnorm(i))))
+		antisqsh(i) = ((1.0_rk)/((stdnorm(i) + 10.0_rk)*(stdnorm(i) + 10.0_rk)))
 
 	end do
 
-	! Invoking the statistical functions and copying the data
+	! Invoking the plotting functions and copying the data to file
 
-	CALL binrange(flat, n, division, histmin_flat, histmax_flat, histep_flat, bincount_flat)
-	CALL binrange(linear, n, division, histmin_linear, histmax_linear, histep_linear, bincount_linear)
-	CALL binrange(expon, n, division, histmin_expon, histmax_expon, histep_expon, bincount_expon)
+	CALL binrange(stdnorm, dim, division, h_min, h_max, bincnt, binwth)
+	allocate(h_stdnorm(bincnt))
+	CALL binfill(stdnorm, dim, h_min, h_max, bincnt, binwth, h_stdnorm)
 
-	allocate(histogram_flat(bincount_flat))
-	allocate(histogram_linear(bincount_linear))
-	allocate(histogram_expon(bincount_expon))
+	open(unit=2, file='stdnorm.dat')
+	write(unit=2,fmt=*)"bin number ", " times", " left bound "
+	do j = 1_ik, bincnt
+		write(unit=2,fmt=*)j, h_stdnorm(j), (h_min + (j*(binwth)))
+	end do
 
-	CALL binfill(flat, n, histmin_flat, histmax_flat, histep_flat, bincount_flat, histogram_flat)
-	CALL binfill(linear, n, histmin_linear, histmax_linear, histep_linear, bincount_linear, histogram_linear)
-	CALL binfill(expon, n, histmin_expon, histmax_expon, histep_expon, bincount_expon, histogram_expon)
+	CALL binrange(square, dim, division, h_min, h_max, bincnt, binwth)
+	allocate(h_square(bincnt))
+	CALL binfill(square, dim, h_min, h_max, bincnt, binwth, h_square)
 
-	! Writing to file all the data...
+	open(unit=3, file='square.dat')
+	write(unit=3,fmt=*)"bin number ", " times", " left bound "
+	do j = 1_ik, bincnt
+		write(unit=3,fmt=*)j, h_square(j), (h_min + (j*(binwth)))
+	end do
+
+	CALL binrange(antilin, dim, division, h_min, h_max, bincnt, binwth)
+	allocate(h_antilin(bincnt))
+	CALL binfill(antilin, dim, h_min, h_max, bincnt, binwth, h_antilin)
+
+	open(unit=4, file='antilin.dat')
+	write(unit=4,fmt=*)"bin number ", " times", " left bound "
+	do j = 1_ik, bincnt
+		write(unit=4,fmt=*)j, h_antilin(j), (h_min + (j*(binwth)))
+	end do
+
+	CALL binrange(antisq, dim, division, h_min, h_max, bincnt, binwth)
+	allocate(h_antisq(bincnt))
+	CALL binfill(antisq, dim, h_min, h_max, bincnt, binwth, h_antisq)
+
+	open(unit=5, file='antisq.dat')
+	write(unit=5,fmt=*)"bin number ", " times", " left bound "
+	do j = 1_ik, bincnt
+		write(unit=5,fmt=*)j, h_antisq(j), (h_min + (j*(binwth)))
+	end do
+
+	CALL binrange(antisqsh, dim, division, h_min, h_max, bincnt, binwth)
+	allocate(h_antisqsh(bincnt))
+	CALL binfill(antisqsh, dim, h_min, h_max, bincnt, binwth, h_antisqsh)
+
+	open(unit=6, file='antisqsh.dat')
+	write(unit=6,fmt=*)"bin number ", " times", " left bound "
+	do j = 1_ik, bincnt
+		write(unit=6,fmt=*)j, h_antisqsh(j), (h_min + (j*(binwth)))
+	end do
+
+	! Writing to file all the remaining data...
 
 	open(unit=1, file='distributions.dat')
-	open(unit=2, file='h-flat.dat')
-	open(unit=3, file='h-linear.dat')
-	open(unit=4, file='h-exponential.dat')
 
-	do i=1_ik, n
-		write(unit=1,fmt=*)i, flat(i), expon(i), linear(i)
-	end do
-
-	do j = 1_ik, bincount_flat
-		write(unit=2,fmt=*)j, histogram_flat(j)
-	end do
-
-	do j = 1_ik, bincount_linear
-		write(unit=3,fmt=*)j, histogram_linear(j)
-	end do
-
-	do j = 1_ik, bincount_expon
-		write(unit=4,fmt=*)j, histogram_expon(j)
+	write(unit=1,fmt=*)"index ", " stdnorm ", " square ", " antilin ", " antisq ", " antisqsh "
+	do j=1_ik, dim
+		write(unit=1,fmt=*)j, stdnorm(j), square(j), antilin(j), antisq(j), antisqsh(j)
 	end do
 
 	print*, 'Computation completed!'		! Some info for the user
 
-END PROGRAM RANDIST
+END PROGRAM DISTGEN2
 
 ! ### END OF THE FILE
