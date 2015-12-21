@@ -1,11 +1,11 @@
-! MONTEPI - v. 1.2
-! A multiprecision calculator of the Pi constant using a simple pseudo-ramdomic Monte Carlo algorithm.
+! BUFFONEEDLE - v. 1.2 SIM
+! A pseudo-ramdomic Monte Carlo simulator of Buffon's Needle Problem.
 
 ! It relies heavily on George Marsaglia's KISS linear RNG (Fortran built-in).
 ! It uses the GLPREC and GLCONST modules/subroutines by Emanuele Ballarin.
 
 ! (C) Emanuele Ballarin (ehteqx@gmail.com)
-!######################################################################################################
+!###############################################################################
 
 ! ### MODULES IMPORT & DEFINITION ###
 
@@ -28,7 +28,7 @@ MODULE GLCONST			! Module for global and universal constants
     END MODULE GLCONST
 
 
-PROGRAM MONTEPI
+PROGRAM BUFFONEEDLE
 
 	use GLPREC				! All the required modules are imported
 	use GLCONST
@@ -36,25 +36,27 @@ PROGRAM MONTEPI
 
 	! ## VARIABLES DEFINITION ##
 
-    integer (kind = ik) :: points		! Number of points used for the MC simulation
+    integer (kind = ik) :: throws		! Number of throws used to simulate the event
+	real (kind = rk) :: floor, needle, ratio	! Lenght of the needle and the distance detween tiles
 
-    real (kind = rk), allocatable :: xcoord(:), ycoord(:)     ! Arrays of coordinates (from 0.0 to 1.0)
-    integer (kind = 4) :: rseed_x = 5931041, rseed_y = 6327490  ! The random seeds used to generate the coordinates
+    real (kind = rk), allocatable :: dist(:), angle(:)     ! Arrays of coordinates (distance, angle)
+    integer (kind = 4) :: rseed_x = 6187321, rseed_y = 2336850  ! The random seeds used to generate the coordinates
 
     real (kind = rk), allocatable :: values(:), errors(:)     ! Working arrays
-    integer (kind = ik) :: inside = 0_ik    ! Counter
+    integer (kind = ik) :: crosses = 0_ik    ! Counter
 
     real (kind = rk) :: pigreco = 0.0_rk
 
 	integer (kind = ik) :: i, j   ! Indexes
 
-	character :: check
+	character :: check				! Checker for user interaction
+	logical :: lequal = (.FALSE.)		! Boolean checkbox for hypothesis verification
 
 	! ## INTRO SCREEN ##
 
 	print*, ' '
 	print*, '#######################################################################'
-	print*, '                           MONTEPI - v. 1.2                           '
+	print*, '                         BUFFONEEDLE - v. 1.2                         '
 	print*, '                                                                      '
 	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
 	print*, '                                                                      '
@@ -66,39 +68,62 @@ PROGRAM MONTEPI
 
 	! ## USER INTERACTION ##
 
-	print*, 'Inserisci il numero di punti da utilizzare per la simulazione Monte-Carlo (the more, the more precise) '
-	read*, points
+	print*, 'Inserisci il numero di lanci da utilizzare per la simulazione Monte-Carlo (the more, the more precise) '
+	read*, throws
+
+	print*, 'Inserisci la distanza tra le fughe parallele del pavimento (valore reale arbitrario) '
+	read*, floor
+
+	do while (lequal .EQV. (.FALSE.))			! While cycle to have the needle length smaller than the tile distance
+		print*, 'Inserisci la lunghezza dello ago (minore o uguale della distanza tra le fughe) '
+		read*, needle
+
+		if (needle .LE. floor) then
+
+			lequal = .TRUE.
+
+		else
+			lequal = .FALSE.
+			print*, 'Non hai inserito un valore consentito! Riprova...'
+
+		end if
+
+	end do
 
     print*, 'Computation started...'		! Some info for the user
 
+	ratio = floor/needle
+
     ! ## PREPARING FOR RUN ##
 
-    allocate(xcoord(points))        ! The coordinates arrays are allocated using the user-input number of points
-    allocate(ycoord(points))
+    allocate(dist(throws))        ! The coordinates arrays are allocated using the user-input number of points
+    allocate(angle(throws))
 
     CALL RANDOM_SEED(rseed_x)       ! The arrays are filled with random coordinates, between 0.0 and 1.0
-    CALL RANDOM_NUMBER(xcoord)
+    CALL RANDOM_NUMBER(dist)
+	dist = (dist)*floor/2.0			! The array coordinates span is adjusted according to user input
 
     CALL RANDOM_SEED(rseed_y)
-    CALL RANDOM_NUMBER(ycoord)
+    CALL RANDOM_NUMBER(angle)
+	angle = (angle)*onepi/2.0		! The array coordinates span is adjusted
 
-    allocate(values(points))
-    allocate(errors(points))
+    allocate(values(throws))
+    allocate(errors(throws))
 
-    do i = 1_ik, points
+    do i = 1_ik, throws
 
-        if ((((xcoord(i))**2) + ((ycoord(i))**2)) .LE. 1.0_rk) then
+        if ((dist(i)) .LE. ((needle)*(sin(angle(i)))/2.0)) then
 
-            inside = inside + 1_ik
+            crosses = crosses + 1_ik
 
         end if
 
-        values(i) = ((4.0_rk)*(REAL(inside, rk))/(REAL(i, rk)))
+        values(i) = 2.0/(((REAL(crosses, rk))/(REAL(i, rk)))*ratio)
         errors(i) = ABS((values(i)) - onepi)
 
     end do
 
-    pigreco = values(points)
+    pigreco = values(throws)
 
     print*, 'Computation completed!'		! Some info for the user
     print*, ' '
@@ -124,8 +149,8 @@ PROGRAM MONTEPI
     print*, ' '
     print*, ' '
 
-    print*, 'The estimated value for Pi, using ', points, ' points is: ', pigreco	! Some info for the user
+    print*, 'The estimated value for Pi, using ', throws, ' throws is: ', pigreco	! Some info for the user
 
-END PROGRAM MONTEPI
+END PROGRAM BUFFONEEDLE
 
 ! ### END OF THE FILE
