@@ -40,7 +40,7 @@ MODULE LSLMFIT         ! Module for the general-purpose calculation of best line
 
                 ! Formula per LSLM (StdDev o StdDev * Values) FLAGGED !
                 do k=1,dimarr
-                    errvar(k) = (((errvar(k))*(arr_y(k))/(sqrt(3.0_rk)))**(2.0_rk))
+                    errvar(k) = (((errvar(k))*(arr_y(k))/(sqrt(3.0_rk)))**(2.0_ik))
                 end do
 
 				! The sums are computed within a do-cycle
