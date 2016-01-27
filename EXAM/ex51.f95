@@ -1,6 +1,9 @@
-! EXAM EXERCISE N° 5.1 --- (Using: LinearFit - v. 1.2 ENH)
+! EXAM EXERCISE N° 5.1 -- FIT
+! A simple linear fitter and chi-square tester
 ! (C) Emanuele Ballarin (ehteqx@gmail.com)
 !##########################################################
+
+! § MODULES (Declaration and Definition)
 
 MODULE GLPREC			! Module for global precision constants
 
@@ -40,7 +43,7 @@ MODULE LSLMFIT         ! Module for the general-purpose calculation of best line
 
                 ! Formula per LSLM (StdDev o StdDev * Values) FLAGGED !
                 do k=1,dimarr
-                    errvar(k) = (((errvar(k))*(arr_y(k))/(sqrt(3.0_rk)))**(2.0_ik))
+                    errvar(k) = (((errvar(k))*(arr_y(k)))**(2.0_ik))
                 end do
 
 				! The sums are computed within a do-cycle
@@ -70,17 +73,25 @@ MODULE LSLMFIT         ! Module for the general-purpose calculation of best line
 
     END MODULE LSLMFIT
 
+! ******************************************************************************
+
+! § MAIN PROGRAM (Nonmodular, Interactive, Complete)
+
 PROGRAM EX51
 
         use GLPREC
         use LSLMFIT
+		use CHISQUARED
         implicit none
 
 		real (kind = rk), dimension(7) :: arr_x = [1.0_rk,2.0_rk,3.0_rk,4.0_rk,5.0_rk,6.0_rk,7.0_rk]
 		real (kind = rk), dimension(7) :: arr_y = [3.2_rk,5.3_rk,6.5_rk,9.0_rk,10.3_rk,13.4_rk,14.5_rk]
 		real (kind = rk), dimension(7) :: errvar = 0.05_rk, errvarprd = 0.0_rk
 		real (kind = rk), dimension(7) :: linefit
-		integer (kind = ik) :: dimarr = 7
+		real (kind = rk), dimension(7) :: chitest
+		real (kind = rk), dimension(7) :: chireal
+
+		integer (kind = ik) :: dimarr = 7, w, z
 		real (kind = rk) :: out_m, out_q, out_cov, out_corr, out_eq, out_em
 
         errvarprd = errvar
@@ -88,5 +99,19 @@ PROGRAM EX51
 		CALL LINFIT(dimarr, arr_x, arr_y, errvarprd, out_m, out_q, out_cov, out_corr, out_eq, out_em, linefit)
 
 		print*, dimarr, arr_x, arr_y, errvar, errvarprd, out_m, out_q, out_cov, out_corr, out_eq, out_em, linefit
+
+		! Stampa dei valori su file
+		open(unit=1, file='param.dat')
+			write(unit=1,fmt=*)'VERTICALLY ALIGNED'
+			write(unit=1,fmt=*)'std. dev. y_i', 'm stimato', 'q stimato', 'err. m stim.', 'err. q stim.', 'covar.', 'coeff. corr.'
+			write(unit=1,fmt=*)(sqrt(errvar)), out_m, out_q, out_em, out_eq, out_cov, out_corr
+
+		open(unit=2, file='plots.dat')
+
+		do w = 1, 7, 1
+			write(unit=2,fmt=*)'HORIZONTALLY ALIGNED'
+			write(unit=2,fmt=*)'n. ord', 'x values', 'exact y', 'estim. y'
+			write(unit=2,fmt=*)w, arr_x(w), arr_y(w), linefit(w)
+		end do
 
     END PROGRAM EX51

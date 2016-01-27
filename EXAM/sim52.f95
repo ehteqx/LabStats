@@ -129,6 +129,35 @@ MODULE LSLMFIT         ! Module for the general-purpose calculation of best line
 
     END MODULE LSLMFIT
 
+MODULE CHISQUARED         ! Module for the computation of a Chi-Squared Distribution sampling
+
+    use GLPREC
+    implicit none
+
+    CONTAINS
+
+        FUNCTION XSQ(dglib, ics), result(ips)
+
+            implicit none
+
+                integer (kind = ik), intent(in) :: dglib
+                real (kind = rk), intent(in) :: ics
+                real (kind = rk), intent(out) :: ips
+
+                integer (kind = ik) :: w
+
+                ! DEFINITIONS
+                real (kind = rk) :: alpha = ((real(dglib, rk))/2.0_rk)
+                real (kind = rk) :: beta = (1.0_rk/2.0_rk)
+                real (kind = rk) :: gam = GAMMA(alpha)
+
+                ! RESULT (Chi-Squared distribution)
+                ips = ((beta**alpha)*(ics**(alpha - 1.0_rk))*(EXP(-(beta*ics)))/(gam))
+
+            END FUNCTION
+
+    END MODULE CHISQUARED
+
 ! ******************************************************************************
 
 ! § MAIN PROGRAM (Nonmodular, Interactive, Complete)
@@ -156,30 +185,32 @@ PROGRAM SIMULATION
 	! Things necessary to generate the random seeds for gaussian error generation
 	integer (kind = ik) :: cntsim = 0 		             ! Number of simulations (user-defined)
 	integer (kind = 4) :: foresee_d				             ! Seed of seeds (user-defined for randomness)
-	real (kind = rk), allocatable :: aseeds_buffer = 0	     ! Array of seeds, buffered, real-valued
-	integer (kind = 4), allocatable :: aseeds = 0            ! Array of seeds, positive integers
+	real (kind = rk), dimension(:), allocatable :: aseeds_buffer	     ! Array of seeds, buffered, real-valued
+	integer (kind = 4), dimension(:), allocatable :: aseeds            ! Array of seeds, positive integers
 
 	! Result arrays (estimated m_0 and q_0 for each simulation)
-	real (kind = rk), allocatable :: estimated_m = 0.0
-	real (kind = rk), allocatable :: estimated_q = 0.0
+	real (kind = rk), dimension(:), allocatable :: estimated_m
+	real (kind = rk), dimension(:), allocatable :: estimated_q
 
 	! Mock variables (end nowhere)
+
 	real (kind = rk) :: out_m, out_q, out_cov, out_corr
-	real (kind = rk), dimension(7) :: pit
+	real (kind = rk), dimension(7) :: pit, variarray
 
     ! Bootstrapping message
     print*, ' '
-    print*, '#######################################################################'
-	print*, '                       SIMFIT - v. 2.1 GAUSSIAN                       '
-	print*, '                                                                      '
-	print*, '                  Copyright (C) 2015 Emanuele Ballarin                '
-	print*, '                                                                      '
-	print*, 'This is free software, covered by the GNU General Public License v3,  '
-	print*, 'and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
-	print*, 'For more information about the license: https://www.gnu.org/licenses/ '
-	print*, '#######################################################################'
+    print*, '************************************************************************'
+	print*, '                     SIMFIT - v. 2.1 GAUSSIAN ERRORS                   '
+	print*, '                                                                       '
+	print*, '                   Copyright (C) 2015 Emanuele Ballarin                '
+	print*, '                                                                       '
+	print*, ' This is free software, covered by the GNU General Public License v3,  '
+	print*, ' and comes with ABSOLUTELY NO WARRANTY WHATSOEVER.                     '
+	print*, ' For more information about the license: https://www.gnu.org/licenses/ '
+	print*, '************************************************************************'
     print*, ' '
     print*, 'Program loaded!'
+	print*, ' '
 
     ! Some user interaction (for the random seed and the number of simulations)
     print*, 'Insert the number of simulations that you want to run... '
@@ -195,7 +226,9 @@ PROGRAM SIMULATION
 
     ! The seeds for gaussian error generation are finally generated
 	allocate(aseeds_buffer(3_ik*cntsim))
+		aseeds_buffer = 0.0_rk
 	allocate(aseeds(3_ik*cntsim))
+		aseeds = 0
 
 	CALL RANDOM_SEED(foresee_d)
 	CALL RANDOM_NUMBER(aseeds_buffer)
@@ -215,25 +248,37 @@ PROGRAM SIMULATION
     print*, 'Using', m_zero, 'as m_0 central value'
     print*, 'Using', q_zero, 'as q_0 central value'
     print*, ' '
+	print*, 'Computing...'
+	print*, ' '
 
     ! The simulation cycle is started and the necessary data is computed
     allocate(estimated_m(cntsim))
+		estimated_m = 0.0_rk
     allocate(estimated_q(cntsim))
+		estimated_q = 0.0_rk
 
     do w = 1, cntsim, 1 ! Cycle of simulations
 
         arr_y = (((m_zero)*(arr_x)) + (q_zero)) ! The y-es array is (re)initialized
 
         ! Generating errors...
-        CALL POLARGAUSS(error_y, 7_ik, 0.0_rk, 0.05, aseeds(memory + 1_ik), aseeds(memory + 2_ik), aseeds(memory + 3_ik))
+        CALL POLARGAUSS(error_y, 7_ik, 0.0_rk, 0.05_rk, aseeds(memory + 1_ik), aseeds(memory + 2_ik), aseeds(memory + 3_ik))
 
         arr_y = (arr_y + error_y) ! Adding errors to the y-es array
 
-        CALL LINFIT(7_ik, arr_x, arr_y, ((0.05_rk)**2_ik), out_m, out_q, out_cov, out_corr, estimated_q(w), estimated_m(w), pit)
+		variarray = ((0.05_rk)**2_ik)
+
+        CALL LINFIT(7_ik, arr_x, arr_y, variarray, out_m, out_q, out_cov, out_corr, estimated_q(w), estimated_m(w), pit)
 
         memory = memory + 3_ik ! Info for the random numbers generator
 
     end do
+
+	! User notification
+    print*, 'OK.'
+
+
+	................................................
 
     ! User notification
     print*, 'OK.'
@@ -241,6 +286,5 @@ PROGRAM SIMULATION
     print*, ' '
     print*, 'Bye bye, have a nice day!'
     print*, ' '
-
 
 END PROGRAM SIMULATION
