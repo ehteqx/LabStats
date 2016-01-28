@@ -81,7 +81,6 @@ PROGRAM EX51
 
         use GLPREC
         use LSLMFIT
-		use CHISQUARED
         implicit none
 
 		real (kind = rk), dimension(7) :: arr_x = [1.0_rk,2.0_rk,3.0_rk,4.0_rk,5.0_rk,6.0_rk,7.0_rk]

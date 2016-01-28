@@ -136,20 +136,24 @@ MODULE CHISQUARED         ! Module for the computation of a Chi-Squared Distribu
 
     CONTAINS
 
-        FUNCTION XSQ(dglib, ics), result(ips)
+        FUNCTION XSQ(dglib, ics) result(ips)
 
             implicit none
 
                 integer (kind = ik), intent(in) :: dglib
                 real (kind = rk), intent(in) :: ics
-                real (kind = rk), intent(out) :: ips
+                real (kind = rk) :: ips
 
                 integer (kind = ik) :: w
 
+				real (kind = rk) :: alpha
+				real (kind = rk) :: beta
+				real (kind = rk) :: gam
+
                 ! DEFINITIONS
-                real (kind = rk) :: alpha = ((real(dglib, rk))/2.0_rk)
-                real (kind = rk) :: beta = (1.0_rk/2.0_rk)
-                real (kind = rk) :: gam = GAMMA(alpha)
+                alpha = ((real(dglib, rk))/2.0_rk)
+                beta = (1.0_rk/2.0_rk)
+                gam = GAMMA(alpha)
 
                 ! RESULT (Chi-Squared distribution)
                 ips = ((beta**alpha)*(ics**(alpha - 1.0_rk))*(EXP(-(beta*ics)))/(gam))
@@ -168,11 +172,12 @@ PROGRAM SIMULATION
 	use GLCONST
 	use GAUSSIAN
 	use LSLMFIT
+	use CHISQUARED
 	implicit none
 
 	! Indexes
 	integer (kind = ik) :: z = 0, w = 0, memory = 0
-	integer (kind = ik) :: k = 0
+	integer (kind = ik) :: k = 0, p = 0
 
 	! Values of m_0 and q_0 in [ y = (m_0)*x + (q_0) ]; Arbitrary, but fixed.
 	real (kind = rk) :: m_zero = pi, q_zero = 1.35
@@ -180,6 +185,7 @@ PROGRAM SIMULATION
 	! Arrays of x-es and y-es
 	real (kind = rk), dimension(7) :: arr_x = [1.0,2.0,3.0,4.0,5.0,6.0,7.0] ! Fixed sampling of x-es
 	real (kind = rk), dimension(7) :: arr_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
+	real (kind = rk), dimension(7) :: exact_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
 	real (kind = rk), dimension(7) :: error_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
 
 	! Things necessary to generate the random seeds for gaussian error generation
@@ -193,9 +199,20 @@ PROGRAM SIMULATION
 	real (kind = rk), dimension(:), allocatable :: estimated_q
 
 	! Mock variables (end nowhere)
-
-	real (kind = rk) :: out_m, out_q, out_cov, out_corr
+	real (kind = rk) :: out_m, out_q, out_cov, out_corr, chisum
 	real (kind = rk), dimension(7) :: pit, variarray
+
+	! Chi-Squared/Gaussian testing arrays and variables
+	real (kind = rk), dimension(:), allocatable :: true_xsq
+	real (kind = rk), dimension(:), allocatable :: estm_xsq
+
+	real (kind = rk), dimension(:), allocatable :: true_gss_m
+	real (kind = rk), dimension(:), allocatable :: true_gss_q
+
+	integer (kind = 4) :: fixseed1 = 5621478, fixseed2 =6953174 , fixseed3 = 3010247
+
+	real (kind = rk) :: varp = 0.0_rk, varm = 0.0_rk ! MODIFY IT!!!******************************************
+
 
     ! Bootstrapping message
     print*, ' '
@@ -257,6 +274,11 @@ PROGRAM SIMULATION
     allocate(estimated_q(cntsim))
 		estimated_q = 0.0_rk
 
+	! XSQ Preallocations
+	arr_x = [1.0_rk,2.0_rk,3.0_rk,4.0_rk,5.0_rk,6.0_rk,7.0_rk]			! Array re-initialization (x)
+	exact_y = (((m_zero)*(arr_x)) + (q_zero))							! Array re-initialization (y)
+	allocate(estm_xsq(cntsim))					! Array allocation
+
     do w = 1, cntsim, 1 ! Cycle of simulations
 
         arr_y = (((m_zero)*(arr_x)) + (q_zero)) ! The y-es array is (re)initialized
@@ -270,17 +292,49 @@ PROGRAM SIMULATION
 
         CALL LINFIT(7_ik, arr_x, arr_y, variarray, out_m, out_q, out_cov, out_corr, estimated_q(w), estimated_m(w), pit)
 
+		! Precomputations for Chi-Squared testing
+		chisum = 0.0_rk
+
+		do p = 1, 7, 1
+		    chisum = chisum + (((pit(p) - exact_y(p))**2)/(exact_y(p)))
+		end do
+
+		estm_xsq(w) = chisum
+
+		! For the RNG
         memory = memory + 3_ik ! Info for the random numbers generator
 
     end do
 
 	! User notification
     print*, 'OK.'
+	print*, ' '
+	print*, 'Generating distributions and testing hypoteses...'
 
+	! Chi-Squared testing
+	allocate(true_xsq((10_ik)*cntsim))
 
-	................................................
+	do p = 1, cntsim*10_ik, 1
+		true_xsq(p) = XSQ(6_ik, (real(p, rk)))
+	end do
 
-    ! User notification
+	! Gaussian testing (m)
+	allocate(true_gss_m((10_ik)*cntsim))
+	CALL POLARGAUSS(true_gss_m, ((10_ik)*cntsim), m_zero, varm, fixseed1, fixseed2, fixseed3)
+
+	! Gaussian testing (q)
+	allocate(true_gss_q((10_ik)*cntsim))
+	CALL POLARGAUSS(true_gss_q, ((10_ik)*cntsim), q_zero, varp, fixseed1, fixseed2, fixseed3)
+
+	! User notification
+	print*, 'OK.'
+	print*, ' '
+	print*, 'Writing data to file...'
+
+	! Writing data to file (only the necessary data)
+	
+
+	! User notification
     print*, 'OK.'
     print*, ' '
     print*, ' '
