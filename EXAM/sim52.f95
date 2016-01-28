@@ -177,7 +177,7 @@ PROGRAM SIMULATION
 
 	! Indexes
 	integer (kind = ik) :: z = 0, w = 0, memory = 0
-	integer (kind = ik) :: k = 0, p = 0
+	integer (kind = ik) :: k = 0, p = 0, i = 0
 
 	! Values of m_0 and q_0 in [ y = (m_0)*x + (q_0) ]; Arbitrary, but fixed.
 	real (kind = rk) :: m_zero = pi, q_zero = 1.35
@@ -332,7 +332,24 @@ PROGRAM SIMULATION
 	print*, 'Writing data to file...'
 
 	! Writing data to file (only the necessary data)
-	
+	open(unit=1, file='exacts.dat')
+		write(unit=1,fmt=*)'VERTICALLY ALIGNED'
+		write(unit=1,fmt=*)'m vero', 'q vero', 'domain; sampling', 'incertezza y'
+		write(unit=1,fmt=*)m_zero, q_zero, '[0.0, 7.0]; 1.0', '0.05'
+
+	open(unit=2, file='results.dat')
+		write(unit=2,fmt=*)'HORIZONTALLY ALIGNED'
+		write(unit=2,fmt=*)'Sim. n°', 'm stim.', 'q stim', 'X2 risult.'
+		do i = 1, cntsim, 1
+			write(unit=2,fmt=*)i, estimated_m(i), estimated_q(i), estm_xsq(i)
+		end do
+
+	open(unit=3, file='distrib.dat')
+		write(unit=2,fmt=*)'HORIZONTALLY ALIGNED'
+		write(unit=2,fmt=*)'Val. n°', 'gaussiana m', 'gaussiana q', 'X2 n = 6'
+		do i = 1, 10*cntsim, 1
+			write(unit=2,fmt=*)i, true_gss_m(i), true_gss_q(i), true_xsq(i)
+		end do
 
 	! User notification
     print*, 'OK.'
