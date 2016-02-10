@@ -1,0 +1,122 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      3872,        112]
+NotebookOptionsPosition[      3634,         99]
+NotebookOutlinePosition[      3974,        114]
+CellTagsIndexPosition[      3931,        111]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+  "SetDirectory", "[", 
+   "\"\</home/ehteqx/Google Drive \
+(ehteqx)/REPOSITORIES/GIT_REPOS/LabStats/EXAM/sim52\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ClearAll", "[", 
+   RowBox[{
+   "results", ",", " ", "restrans", ",", " ", "istogm", ",", " ", "istogq", 
+    ",", " ", "istogX", ",", " ", "ellisseall", ",", "XQdat", ",", " ", 
+    "XQtrans", ",", "inellissem", ",", " ", "inellisseq", ",", " ", 
+    "ellissein"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"results", " ", "=", " ", 
+   RowBox[{"Import", "[", "\"\<results.dat\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"restrans", " ", "=", " ", 
+   RowBox[{"Transpose", "[", "results", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"istogm", " ", "=", " ", 
+   RowBox[{"restrans", "[", 
+    RowBox[{"[", "2", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"istogq", " ", "=", " ", 
+   RowBox[{"restrans", "[", 
+    RowBox[{"[", "3", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"istogX", " ", "=", " ", 
+   RowBox[{"restrans", "[", 
+    RowBox[{"[", "3", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"XQdat", " ", "=", " ", 
+   RowBox[{"Import", "[", "\"\<xq.dat\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"XQtrans", " ", "=", " ", 
+   RowBox[{"Transpose", "[", "XQdat", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"inellissem", " ", "=", " ", 
+   RowBox[{"XQtrans", "[", 
+    RowBox[{"[", "2", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"inellisseq", " ", "=", " ", 
+   RowBox[{"XQtrans", "[", 
+    RowBox[{"[", "3", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ellisseall", " ", "=", " ", 
+   RowBox[{"Transpose", "[", 
+    RowBox[{"{", 
+     RowBox[{"istogm", ",", " ", "istogq"}], "}"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ellissein", " ", "=", " ", 
+   RowBox[{"Transpose", "[", 
+    RowBox[{"{", 
+     RowBox[{"inellissem", ",", " ", "inellisseq"}], "}"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", "\"\<Istogramma delle m stimate...\>\"", "\
+\[IndentingNewLine]", 
+ RowBox[{"Histogram", "[", "istogm", 
+  "]"}], "\[IndentingNewLine]", "\"\<Istogramma delle q stimate...\>\"", "\
+\[IndentingNewLine]", 
+ RowBox[{"Histogram", "[", "istogq", 
+  "]"}], "\[IndentingNewLine]", "\"\<Istogramma del Chi-Quadro dalle stime...\
+\>\"", "\[IndentingNewLine]", 
+ RowBox[{"Histogram", "[", "istogX", 
+  "]"}], "\[IndentingNewLine]", "\"\<Plot dell'ellisse (di confidenza e \
+non)...\>\"", "\[IndentingNewLine]", 
+ RowBox[{"ListPlot", "[", "ellisseall", 
+  "]"}], "\[IndentingNewLine]", "\"\<Plot dell'ellisse di confidenza...\>\"", \
+"\[IndentingNewLine]", 
+ RowBox[{"ListPlot", "[", "ellissein", 
+  "]"}], "\[IndentingNewLine]", "\"\<\>\"", "\[IndentingNewLine]", "\"\<Plot \
+successful!\>\""}], "Input",
+ CellChangeTimes->{{3.664035509987418*^9, 3.664035561175049*^9}, {
+  3.664035621511269*^9, 3.664036474338429*^9}}]
+},
+WindowSize->{927, 1028},
+WindowMargins->{{Automatic, -9}, {Automatic, -10}},
+FrontEndVersion->"10.3 for Linux x86 (64-bit) (December 10, 2015)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 3072, 77, 605, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)
+
