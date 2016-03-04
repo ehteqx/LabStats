@@ -175,10 +175,10 @@ PROGRAM SIMULATION
 	implicit none
 
     ! Indexes
-    integer (kind = ik) :: p = 0        ! On two lines in order to...
+    integer (kind = ik) :: p = 0, w = 0, k = 0, z = 0, h = 0, i = 0, j = 0, f = 0
 
     ! Values of m_0 and q_0 in [ y = (m_0)*x + (q_0) ]; Arbitrary, but fixed.
-    real (kind = rk) :: m_zero = 2.56, q_zero = 0.75    ! DO NOT CHANGE DURING EXECUTION
+    real (kind = rk) :: m_zero = 1.0, q_zero = 8    ! DO NOT CHANGE DURING EXECUTION
 
     ! Gaussian seeds
     integer (kind = 4) :: fixseed1 = 5621478, fixseed2 =6953174, ofaseed = 5316985  ! OFA = One For All
@@ -193,18 +193,28 @@ PROGRAM SIMULATION
     real (kind = rk), dimension(:), allocatable :: estimated_m
     real (kind = rk), dimension(:), allocatable :: estimated_q
 
+	real (kind = rk), dimension(:), allocatable :: estimated_merr
+	real (kind = rk), dimension(:), allocatable :: estimated_qerr
+	real (kind = rk), dimension(:), allocatable :: correl
+
     ! Arrays of x-es and y-es
     real (kind = rk), dimension(7) :: arr_x = [1.0,2.0,3.0,4.0,5.0,6.0,7.0] ! Fixed sampling of x-es
     real (kind = rk), dimension(7) :: exact_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
     real (kind = rk), dimension(7) :: arr_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
     real (kind = rk), dimension(7) :: error_y = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
+	real (kind = rk), dimension(7) :: stdevarr = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes (STANDARD DEVS)
+	real (kind = rk), dimension(7) :: variancevarr = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes (VARIANCES)
+	real (kind = rk), dimension(7) :: linearfitted = [0.0,0.0,0.0,0.0,0.0,0.0,0.0] ! Initialized zeroes
 
     ! Things necessary to generate the random seeds for gaussian error generation
     integer (kind = ik) :: cntsim = 0       ! Number of simulations (user-defined)
     integer (kind = 4) :: foresee_d		    ! Master seed (user-defined for randomness)
 
     ! Chi-Squared/Gaussian testing arrays and variables
-    real (kind = rk) :: varp = 1.0_rk, varm = 1.0_rk      ! DEVIAZIONE STANDARD? (Sono inseriti valori di test: 1.0)
+    real (kind = rk) :: varp = 1.0, varm = 1.0, chisum = 0.0      ! DEVIAZIONE STANDARD? (Sono inseriti valori di test: 1.0)
+
+	! Self-destroying variables
+	real (kind = rk) :: dest1	!, dest2
 
     !...
     ! ################ INSERIRE LA LISTA DELLE VARIABILI DAL FILE A FIANCO ##############################################
@@ -245,9 +255,21 @@ PROGRAM SIMULATION
     exact_y = (((m_zero)*(arr_x)) + (q_zero))		! Array initialization (exact y)
     ofaseed = foresee_d
 
+	do k = 1, 7, 1
+		stdevarr(k) = (0.05_rk)*exact_y(k)
+		variancevarr(k) = stdevarr(k)**2
+	end do
+
+	!Allocating allocatable arrays
     allocate(estimated_m(cntsim))
         estimated_m = 0.0_rk
     allocate(estimated_q(cntsim))
+        estimated_q = 0.0_rk
+	allocate(estimated_merr(cntsim))
+        estimated_m = 0.0_rk
+    allocate(estimated_qerr(cntsim))
+        estimated_q = 0.0_rk
+	allocate(correl(cntsim))
         estimated_q = 0.0_rk
     allocate(estm_xsq(cntsim))
         estm_xsq = 0.0_rk
@@ -258,9 +280,28 @@ PROGRAM SIMULATION
     allocate(true_gss_q((10_ik)*cntsim))
         true_gss_q = 0.0_rk
 
-    !...
-    ! ################ CICLO DI SIMULAZIONI E FIT - MANCA PROGRAMMA ####################################################
-    !...
+	! Outer cycle of simulations
+    do w = 1, cntsim, 1
+
+        ! Generating errors (of stated stdev) for simulated y
+        do z = 1, 7, 1
+            CALL POLARGAUSS(error_y(z), 1_ik, 0.0_rk, stdevarr(z), ofaseed)
+            ofaseed = ofaseed + 1
+        end do
+
+        arr_y = exact_y + error_y   ! Computing simulations as EXACT + ERROR
+
+        CALL LINFIT(7_ik, arr_x, arr_y, variancevarr, estimated_m(w), estimated_q(w),&		! On two lines because...
+		& dest1, correl(w), estimated_qerr(w), estimated_merr(w), linearfitted)					! ...else the line is truncated
+
+		!Chi-Squared testing (REDUCED)
+		chisum = 0.0_rk
+		do h = 1, 7, 1
+		    chisum = chisum + (((linearfitted(h) - arr_y(h))**2)/(variancevarr(h)))
+		end do
+		estm_xsq(w) = chisum
+
+	end do
 
     ! User notification
     print*, 'OK.'
@@ -282,3 +323,40 @@ PROGRAM SIMULATION
     print*, 'OK.'
     print*, ' '
     print*, 'Writing data to file...'
+
+	! Writing data to file the necessary data
+	open(unit=2, file='results.dat')
+		do i = 1, cntsim, 1
+			write(unit=2,fmt=*)i, estimated_m(i), estimated_q(i), estm_xsq(i)
+		end do
+
+	open(unit=3, file='distrib.dat')
+		do j = 1, 10*cntsim, 1
+			write(unit=3,fmt=*)j, true_gss_m(j), true_gss_q(j), true_xsq(j)
+		end do
+
+	! Chi-Squared internal ellipse (direct print) <---- ????
+	open(unit=4, file='xq.dat')
+		do f = 1, cntsim, 1
+			if (((1.0_rk/(1.0_rk - (correl(f)**2)))*(((estimated_m(f)&
+			& - m_zero)**2)/estimated_merr(f)) + (((estimated_q(f)&
+			& - q_zero)**2)/estimated_qerr(f))&
+			& - ((0.5_rk*correl(f)*(estimated_m(f) - m_zero)*(estimated_q(f)&
+			& - q_zero))&
+			& / ((sqrt(estimated_merr(f)*estimated_qerr(f))))))&
+			& .LE. 1.0_rk ) then
+				write(unit=4,fmt=*)f, estimated_m(f), estimated_q(f)
+			end if
+
+				!print*, correl(f), estimated_merr(f), estimated_qerr(f)
+
+		end do
+
+	! User notification
+	print*, 'OK.'
+	print*, ' '
+	print*, ' '
+	print*, 'Bye bye, have a nice day!'
+	print*, ' '
+
+END PROGRAM SIMULATION
